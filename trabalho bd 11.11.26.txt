@@ -1,0 +1,455 @@
+CREATE DATABASE IF NOT EXISTS livraria_db;
+
+USE livraria_db;
+
+CREATE TABLE tb_secao (
+    id_secao INT AUTO_INCREMENT,
+    nome VARCHAR(60) NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_tb_secao PRIMARY KEY (id_secao)
+);
+
+CREATE TABLE tb_categoria (
+    id_categoria INT AUTO_INCREMENT,
+    nome VARCHAR(80) NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_tb_categoria PRIMARY KEY (id_categoria)
+);
+
+CREATE TABLE tb_editora (
+    cnpj CHAR(14),
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(15),
+    email VARCHAR(100),
+    CONSTRAINT PK_tb_editora PRIMARY KEY (cnpj)
+);
+
+CREATE TABLE tb_autor (
+    cpf CHAR(11),
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(15),
+    email VARCHAR(100),
+    CONSTRAINT PK_tb_autor PRIMARY KEY (cpf)
+);
+
+CREATE TABLE tb_fornecedor (
+    cnpj CHAR(14),
+    razao_social VARCHAR(120) NOT NULL,
+    telefone VARCHAR(15),
+    email VARCHAR(100),
+    endereco VARCHAR(200),
+    CONSTRAINT PK_tb_fornecedor PRIMARY KEY (cnpj)
+);
+
+CREATE TABLE tb_funcionario (
+    id_funcionario INT AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(15),
+    cpf CHAR(11) UNIQUE,
+    CONSTRAINT PK_tb_funcionario PRIMARY KEY (id_funcionario)
+);
+
+CREATE TABLE tb_prateleira (
+    id_prateleira INT AUTO_INCREMENT,
+    nome VARCHAR(60) NOT NULL,
+    id_secao INT NOT NULL,
+    CONSTRAINT PK_tb_prateleira PRIMARY KEY (id_prateleira),
+    CONSTRAINT FK_tb_prateleira_tb_secao FOREIGN KEY (id_secao) 
+        REFERENCES tb_secao (id_secao)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_cliente (
+    cpf CHAR(11),
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(15),
+    id_funcionario INT NOT NULL,
+    CONSTRAINT PK_tb_cliente PRIMARY KEY (cpf),
+    CONSTRAINT FK_tb_cliente_tb_funcionario FOREIGN KEY (id_funcionario) 
+        REFERENCES tb_funcionario (id_funcionario)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_livro (
+    isbn CHAR(13),
+    nome VARCHAR(150) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    quantidade INT NOT NULL DEFAULT 0,
+    id_categoria INT NOT NULL,
+    cnpj_editora CHAR(14) NOT NULL,
+    id_prateleira INT NOT NULL,
+    CONSTRAINT PK_tb_livro PRIMARY KEY (isbn),
+    CONSTRAINT FK_tb_livro_tb_categoria FOREIGN KEY (id_categoria) 
+        REFERENCES tb_categoria (id_categoria)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_livro_tb_editora FOREIGN KEY (cnpj_editora) 
+        REFERENCES tb_editora (cnpj)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_livro_tb_prateleira FOREIGN KEY (id_prateleira) 
+        REFERENCES tb_prateleira (id_prateleira)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_compra (
+    id_compra INT AUTO_INCREMENT,
+    data_compra DATE NOT NULL,
+    forma_pagamento VARCHAR(30) NOT NULL,
+    valor_total DECIMAL(10,2) NOT NULL,
+    cpf_cliente CHAR(11) NOT NULL,
+    id_funcionario INT NOT NULL,
+    CONSTRAINT PK_tb_compra PRIMARY KEY (id_compra),
+    CONSTRAINT FK_tb_compra_tb_cliente FOREIGN KEY (cpf_cliente) 
+        REFERENCES tb_cliente (cpf)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_compra_tb_funcionario FOREIGN KEY (id_funcionario) 
+        REFERENCES tb_funcionario (id_funcionario)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_livro_autor (
+    isbn CHAR(13),
+    cpf_autor CHAR(11),
+    CONSTRAINT PK_tb_livro_autor PRIMARY KEY (isbn, cpf_autor),
+    CONSTRAINT FK_tb_livro_autor_tb_livro FOREIGN KEY (isbn) 
+        REFERENCES tb_livro (isbn)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_livro_autor_tb_autor FOREIGN KEY (cpf_autor) 
+        REFERENCES tb_autor (cpf)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_livro_fornecedor (
+    isbn CHAR(13),
+    cnpj_fornecedor CHAR(14),
+    CONSTRAINT PK_tb_livro_fornecedor PRIMARY KEY (isbn, cnpj_fornecedor),
+    CONSTRAINT FK_tb_livro_fornecedor_tb_livro FOREIGN KEY (isbn) 
+        REFERENCES tb_livro (isbn)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_livro_fornecedor_tb_fornecedor FOREIGN KEY (cnpj_fornecedor) 
+        REFERENCES tb_fornecedor (cnpj)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE tb_item_compra (
+    id_compra INT,
+    isbn CHAR(13),
+    quantidade INT NOT NULL,
+    valor_unitario DECIMAL(10,2) NOT NULL,
+    CONSTRAINT PK_tb_item_compra PRIMARY KEY (id_compra, isbn),
+    CONSTRAINT FK_tb_item_compra_tb_compra FOREIGN KEY (id_compra) 
+        REFERENCES tb_compra (id_compra)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_tb_item_compra_tb_livro FOREIGN KEY (isbn) 
+        REFERENCES tb_livro (isbn)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- 2 INSERÇÃO DE DADOS FICTÍCIOS 
+
+INSERT INTO tb_secao (id_secao, nome, descricao) VALUES
+(1, 'Infantil', 'Livros voltados para o público infantil e juvenil.'),
+(2, 'Tecnologia', 'Livros de programação, engenharia de software e TI.'),
+(3, 'Literatura Estrangeira', 'Obras traduzidas de autores internacionais.'),
+(4, 'Business & Gestão', 'Livros sobre empreendedorismo, finanças e administração.'),
+(5, 'Ciências Exatas', 'Livros de matemática, física, química e estatística.'),
+(6, 'História & Geopolítica', 'Obras de história geral, do Brasil e geopolítica moderna.'),
+(7, 'Psicologia & Autoconhecimento', 'Livros de desenvolvimento pessoal e psicologia aplicada.'),
+(8, 'Filosofia & Sociologia', 'Obras clássicas e contemporâneas do pensamento humano.'),
+(9, 'Artes & Design', 'Livros de pintura, arquitetura, música e design gráfico.'),
+(10, 'Saúde & Medicina', 'Manuais e guias de anatomia, nutrição e bem-estar.'),
+(11, 'Quadrinhos & Mangás', 'HQs de heróis, graphic novels e mangás variados.'),
+(12, 'Religião & Espiritualidade', 'Textos sagrados, teologia e livros de espiritualidade.'),
+(13, 'Gastronomia & Culinária', 'Livros de receitas, alta gastronomia e enologia.'),
+(14, 'Direito & Legislação', 'Doutrinas, Vade Mecums e livros jurídicos.'),
+(15, 'Engenharia & Arquitetura', 'Manuais de projetos, estruturas e construção civil.'),
+(16, 'Poesia & Teatrologia', 'Coletâneas poéticas e dramaturgias renomadas.'),
+(17, 'Turismo & Viagens', 'Guias de viagem, mapas e relatos de exploração.'),
+(18, 'Idiomas & Dicionários', 'Gramáticas, dicionários e métodos de aprendizado de línguas.'),
+(19, 'Esportes & Lazer', 'Biografia de atletas, táticas esportivas e guias de exercícios.'),
+(20, 'Biografia & Memórias', 'Relatos autobiográficos de personalidades históricas.');
+
+INSERT INTO tb_categoria (id_categoria, nome, descricao) VALUES
+(1, 'Ficção Científica', 'Histórias baseadas em especulação científica e futurista.'),
+(2, 'Programação', 'Manuais e guias de linguagens de programação.'),
+(3, 'Fantasia', 'Obras com elementos mágicos e mundos imaginários.'),
+(4, 'Finanças Pessoais', 'Guias de educação financeira e investimentos.'),
+(5, 'Romance Contemporâneo', 'Ficções focadas em relacionamentos e dramas modernos.'),
+(6, 'Desenvolvimento Pessoal', 'Métodos de produtividade e aperfeiçoamento interpessoal.'),
+(7, 'Física Quântica', 'Divulgação científica e teorias da física moderna.'),
+(8, 'História do Brasil', 'Estudos sobre o Brasil colonial, imperial e republicano.'),
+(9, 'Inteligência Artificial', 'Livros sobre aprendizado de máquina, redes neurais e IA.'),
+(10, 'Suspense & Thriller', 'Histórias de mistério, investigação policial e contos de suspense.'),
+(11, 'Design UI/UX', 'Livros de experiência do usuário e interfaces digitais.'),
+(12, 'Economia & Mercados', 'Teoria econômica, macroeconomia e mercado de ações.'),
+(13, 'Filosofia Antiga', 'Obras dos filósofos gregos, romanos e orientais.'),
+(14, 'Nutrição Esportiva', 'Guias de dietas, suplementação e fisiologia humana.'),
+(15, 'Graphic Novel', 'Histórias em quadrinhos encadernadas de formato longo.'),
+(16, 'Poesia Moderna', 'Versos e poemas de autores do século XX e XXI.'),
+(17, 'Direito Constitucional', 'Estudos sobre leis fundamentais e direitos humanos.'),
+(18, 'Marketing Digital', 'Estratégias de vendas online, redes sociais e SEO.'),
+(19, 'Psicanálise', 'Obras sobre Freud, Lacan e comportamento humano.'),
+(20, 'Arquitetura de Software', 'Padrões de projeto, microserviços e sistemas distribuídos.');
+
+INSERT INTO tb_editora (cnpj, nome, telefone, email) VALUES
+('12345678000190', 'Editora Saber', '(61) 3322-1100', 'contato@editorsaber.com'),
+('98765432000111', 'BookNet', '(11) 4455-6677', 'falecom@booknet.com'),
+('45612378000155', 'Nova Cultural', '(21) 2233-4455', 'sac@novacultural.com.br'),
+('11223344000188', 'Companhia das Letras', '(11) 3707-3500', 'atendimento@companhiadasletras.com.br'),
+('22334455000199', 'Editora Intrínseca', '(21) 3206-7400', 'contato@intrinseca.com.br'),
+('33445566000100', 'Grupo Editorial Record', '(21) 2585-2000', 'sac@record.com.br'),
+('44556677000111', 'Editora Rocco', '(21) 3525-2000', 'rocco@rocco.com.br'),
+('55667788000122', 'Editora Sextante', '(21) 2538-4100', 'atendimento@sextante.com.br'),
+('66778899000133', 'Novatec Editora', '(11) 2959-6529', 'vendas@novatec.com.br'),
+('77889900000144', 'Alta Books', '(21) 3274-8000', 'sac@altabooks.com.br'),
+('88990011000155', 'Editora HarperCollins', '(21) 3865-9600', 'atendimento@harpercollins.com.br'),
+('99001122000166', 'Editora L&PM', '(51) 3225-5777', 'vendas@lpm.com.br'),
+('10111213000177', 'Editora Cortez', '(11) 3611-9616', 'cortez@cortezeditora.com.br'),
+('12131415000188', 'Editora Atlas', '(11) 3613-8200', 'atlas@atlas.com.br'),
+('13141516000199', 'Editora Editora Vozes', '(24) 2233-9000', 'vendas@vozes.com.br'),
+('14151617000100', 'Editora Boitempo', '(11) 3875-7250', 'boitempo@boitempo.com.br'),
+('15161718000111', 'Editora Aleph', '(11) 3743-3450', 'contato@editoraaleph.com.br'),
+('16171819000122', 'Editora Autêntica', '(31) 3465-4500', 'atendimento@autentica.com.br'),
+('17181920000133', 'Editora Martin Claret', '(11) 3672-8000', 'claret@martinclaret.com.br'),
+('18192021000144', 'Editora Saraiva', '(11) 3613-3000', 'saraiva@saraiva.com.br');
+
+INSERT INTO tb_autor (cpf, nome, telefone, email) VALUES
+('11122233344', 'J. K. Rowling', '(21) 98888-1111', 'jk@gmail.com'),
+('55566677788', 'Robert C. Martin', '(11) 97777-2222', 'unclebob@clean-code.com'),
+('99988877766', 'Isaac Asimov', '(31) 96666-3333', 'asimov@scifi.org'),
+('22233344455', 'George Orwell', '(11) 95555-4444', 'orwell@dystopia.co'),
+('33344455566', 'Napoleon Hill', '(31) 94444-5555', 'contato@napoleon.com'),
+('10101010101', 'Machado de Assis', '(21) 91010-1010', 'machado@literatura.br'),
+('20202020202', 'Clarice Lispector', '(21) 92020-2020', 'clarice@literatura.br'),
+('30303030303', 'Stephen King', '(11) 93030-3030', 'sking@horror.com'),
+('40404040404', 'Yuval Noah Harari', '(21) 94040-4040', 'yuval@history.org'),
+('50505050505', 'Martin Fowler', '(11) 95050-5050', 'fowler@refactoring.com'),
+('60606060606', 'Agatha Christie', '(21) 96060-6060', 'agatha@mystery.co.uk'),
+('70707070707', 'Paulo Coelho', '(21) 97070-7070', 'paulo@mago.com.br'),
+('80808080808', 'Gabriel García Márquez', '(21) 98080-8080', 'gabo@macondo.co'),
+('90909090909', 'Carl Sagan', '(31) 99090-9090', 'sagan@cosmos.org'),
+('12121212121', 'J. R. R. Tolkien', '(11) 91212-1212', 'tolkien@middleearth.org'),
+('23232323232', 'Dan Brown', '(21) 92323-2323', 'dan@symbolology.com'),
+('34343434343', 'Charles Duhigg', '(11) 93434-3434', 'duhigg@habits.com'),
+('45454545454', 'Friedrich Nietzsche', '(31) 94545-4545', 'nietzsche@filosofia.de'),
+('56565656565', 'Augusto Cury', '(11) 95656-5656', 'cury@mente.com.br'),
+('67676767676', 'Andrew S. Tanenbaum', '(11) 96767-6767', 'ast@minix.org');
+
+INSERT INTO tb_fornecedor (cnpj, razao_social, telefone, email, endereco) VALUES
+('11223344000155', 'Distribuidora Alpha LTDA', '(11) 3333-4444', 'vendas@alpha.com', 'Rua das Flores, 123 - SP'),
+('55667788000199', 'Global Books Distribuição', '(21) 5555-6666', 'contato@globalbooks.com', 'Av. Central, 456 - RJ'),
+('99887766000133', 'Logística Express Livros', '(41) 3344-5566', 'atendimento@logexpress.com', 'Rua do Comércio, 789 - PR'),
+('11111111000101', 'Atacado do Libro S.A.', '(61) 3111-1111', 'comercial@atacadolivro.com.br', 'SIA Trecho 3, Lote 10 - DF'),
+('22222222000102', 'Livraria & Distribuidora Brasil', '(31) 3222-2222', 'vendas@distribuidorabrasil.com', 'Av. Afonso Pena, 500 - MG'),
+('33333333000103', 'Mega Book Logística', '(51) 3333-3333', 'sac@megabook.com.br', 'Rua dos Andradas, 200 - RS'),
+('44444444000104', 'Sul Distribuidora de Livros', '(48) 3444-4444', 'contato@sullivros.com.br', 'Av. Beira Mar, 100 - SC'),
+('55555555000105', 'Nordeste Livros LTDA', '(81) 3555-5555', 'vendas@nordestelivros.com', 'Rua da Aurora, 300 - PE'),
+('66666666000106', 'Centro-Oeste Papéis e Livros', '(62) 3666-6666', 'atendimento@colivros.com.br', 'Av. T-63, 400 - GO'),
+('77777777000107', 'Distribuidora Cultural SP', '(11) 3777-7777', 'contato@culturalsp.com.br', 'Rua Augusta, 1500 - SP'),
+('88888888000108', 'Carioca Distribuidora de Obras', '(21) 3888-8888', 'vendas@cariocalivros.com', 'Av. Rio Branco, 80 - RJ'),
+('99999999000109', 'Livraria Integrada Logística', '(11) 3999-9999', 'sac@integrada.com.br', 'Rua Vergueiro, 900 - SP'),
+('10000000000110', 'Importadora Internacional de Livros', '(11) 3000-0000', 'import@interbooks.com', 'Alameda Santos, 450 - SP'),
+('20000000000120', 'Lumina Logística de Conteúdo', '(41) 3200-0000', 'contato@luminalog.com.br', 'Rua XV de Novembro, 600 - PR'),
+('30000000000130', 'Amazonas Distribuidora de Editores', '(92) 3300-0000', 'vendas@amlivros.com', 'Av. Djalma Batista, 120 - AM'),
+('40000000000140', 'Triângulo Distribuição', '(34) 3400-0000', 'comercial@triangulolivros.com', 'Av. Rondon Pacheco, 800 - MG'),
+('50000000000150', 'Fênix Distribuidora Comercial', '(19) 3500-0000', 'fenix@fenixlivros.com.br', 'Av. Francisco Glicério, 1000 - SP'),
+('60000000000160', 'União Livros Atacadista', '(85) 3600-0000', 'sac@uniaolivros.com.br', 'Av. Beira Mar, 2500 - CE'),
+('70000000000170', 'Direct Books Brasil', '(11) 3700-0000', 'direct@directbooks.com', 'Rua Funchal, 200 - SP'),
+('80000000000180', 'Editora e Distribuidora Nacional', '(61) 3800-0000', 'nacional@distnacional.com.br', 'W3 Norte, Quadra 502 - DF');
+
+INSERT INTO tb_funcionario (id_funcionario, nome, telefone, cpf) VALUES
+(1, 'Ana Souza', '(61) 99111-2222', '12345678901'),
+(2, 'Carlos Lima', '(61) 99222-3333', '98765432109'),
+(3, 'Beatriz Costa', '(61) 99333-4444', '45678912300'),
+(4, 'Daniel Alves', '(61) 99444-5555', '78912345611'),
+(5, 'Eduarda Rocha', '(61) 99555-6666', '32165498722'),
+(6, 'Fernando Martins', '(61) 99666-7777', '65498732133'),
+(7, 'Gabriela Santos', '(61) 99777-8888', '98732165444'),
+(8, 'Heitor Oliveira', '(61) 99888-9999', '14725836955'),
+(9, 'Isabela Pereira', '(61) 99999-0000', '25836914766'),
+(10, 'João Carvalho', '(61) 98111-0011', '36914725877'),
+(11, 'Karina Ribeiro', '(61) 98222-1122', '74185296388'),
+(12, 'Lucas Barbosa', '(61) 98333-2233', '85296374199'),
+(13, 'Mariana Teixeira', '(61) 98444-3344', '96374185200'),
+(14, 'Nicolas Gomes', '(61) 98555-4455', '15975348611'),
+(15, 'Olivia Fernandes', '(61) 98666-5566', '35715984622'),
+(16, 'Pedro Henrique', '(61) 98777-6677', '48625715933'),
+(17, 'Quintino Bocaiúva', '(61) 98888-7788', '84625735944'),
+(18, 'Renata Cardoso', '(61) 98999-8899', '95175385255'),
+(19, 'Samuel Araujo', '(61) 99000-9900', '75395146266'),
+(20, 'Tatiane Ramos', '(61) 99123-4567', '15935748677');
+
+INSERT INTO tb_prateleira (id_prateleira, nome, id_secao) VALUES
+(1, 'Prateleira A1 - Infância', 1),
+(2, 'Prateleira B3 - Dev & Eng', 2),
+(3, 'Prateleira C2 - Ficção', 3),
+(4, 'Prateleira D1 - Gestão', 4),
+(5, 'Prateleira E1 - Exatas', 5),
+(6, 'Prateleira F2 - História', 6),
+(7, 'Prateleira G3 - Psicologia', 7),
+(8, 'Prateleira H1 - Filosofia', 8),
+(9, 'Prateleira I2 - Design', 9),
+(10, 'Prateleira J1 - Saúde', 10),
+(11, 'Prateleira K3 - HQs & Mangás', 11),
+(12, 'Prateleira L1 - Espiritualidade', 12),
+(13, 'Prateleira M2 - Culinária', 13),
+(14, 'Prateleira N1 - Direito', 14),
+(15, 'Prateleira O3 - Engenharia', 15),
+(16, 'Prateleira P1 - Poesia', 16),
+(17, 'Prateleira Q2 - Viagens', 17),
+(18, 'Prateleira R1 - Dicionários', 18),
+(19, 'Prateleira S3 - Esportes', 19),
+(20, 'Prateleira T1 - Biografias', 20);
+
+INSERT INTO tb_cliente (cpf, nome, telefone, id_funcionario) VALUES
+('44455566677', 'Mariana Silva', '(61) 98111-1234', 1),
+('88899900011', 'João Pedro', '(61) 98222-4321', 2),
+('77766655544', 'Camila Oliveira', '(61) 98333-5678', 1),
+('33322211100', 'Lucas Santos', '(61) 98444-9876', 3),
+('11144477700', 'Amanda Rodrigues', '(61) 98555-1111', 4),
+('22255588811', 'Bruno Ferreira', '(61) 98666-2222', 5),
+('33366699922', 'Caio Castro', '(61) 98777-3333', 6),
+('44477700033', 'Diego Mendes', '(61) 98888-4444', 7),
+('55588811144', 'Elena Duarte', '(61) 98999-5555', 8),
+('66699922255', 'Fabio Junior', '(61) 99000-6666', 9),
+('77700033366', 'Gisele Bündchen', '(61) 99111-7777', 10),
+('88811144477', 'Hugo Gloss', '(61) 99222-8888', 11),
+('99922255588', 'Igor Guimarães', '(61) 99333-9999', 12),
+('00033366699', 'Jéssica Ellen', '(61) 99444-0000', 13),
+('12312312388', 'Kléber Bambam', '(61) 99555-1212', 14),
+('23423423499', 'Larissa Manoela', '(61) 99666-2323', 15),
+('34534534500', 'Murilo Benício', '(61) 99777-3434', 16),
+('45645645611', 'Neymar Junior', '(61) 99888-4545', 17),
+('56756756722', 'Paolla Oliveira', '(61) 99999-5656', 18),
+('67867867833', 'Rodrigo Faro', '(61) 98123-6767', 19);
+
+INSERT INTO tb_livro (isbn, nome, preco, quantidade, id_categoria, cnpj_editora, id_prateleira) VALUES
+('9788532511011', 'Harry Potter e a Pedra Filosofal', 49.90, 10, 3, '12345678000190', 1),
+('9788576082675', 'Código Limpo', 89.90, 4, 2, '98765432000111', 2),
+('9788535902778', 'Fundação', 39.90, 8, 1, '12345678000190', 3),
+('9788535909845', '1984', 45.00, 3, 1, '45612378000155', 3),
+('9788539004119', 'Quem Pensa Enriquece', 34.90, 12, 4, '45612378000155', 4),
+('9788550800653', 'Arquitetura Limpa', 99.90, 2, 2, '98765432000111', 2),
+('9788535914849', 'Dom Casmurro', 29.90, 15, 5, '11223344000188', 3),
+('9788598078847', 'A Hora da Estrela', 32.50, 7, 5, '44556677000111', 3),
+('9788535911695', 'Sapiens: Uma Breve História da Humanidade', 59.90, 20, 8, '11223344000188', 6),
+('9788573024623', 'O Mago', 42.00, 6, 6, '55667788000122', 7),
+('9788575422398', 'O Poder do Hábito', 44.90, 18, 6, '55667788000122', 7),
+('9788576088004', 'Refatoração', 110.00, 5, 2, '66778899000133', 2),
+('9788580575392', 'O Iluminado', 54.90, 9, 10, '22334455000199', 3),
+('9788532520662', 'O Hobbit', 59.90, 14, 3, '88990011000155', 1),
+('9788580573107', 'O Código Da Vinci', 49.90, 11, 10, '22334455000199', 3),
+('9788576089520', 'Entendendo Algoritmos', 65.00, 8, 2, '66778899000133', 2),
+('9788535904833', 'Cem Anos de Solidão', 64.90, 6, 5, '11223344000188', 3),
+('9788576087014', 'Padrões de Projeto', 125.00, 4, 20, '77889900000144', 2),
+('9788585910686', 'Cosmos', 79.90, 10, 7, '15161718000111', 5),
+('9788535933420', 'Assim Falou Zaratustra', 39.90, 7, 13, '17181920000133', 8);
+
+INSERT INTO tb_compra (id_compra, data_compra, forma_pagamento, valor_total, cpf_cliente, id_funcionario) VALUES
+(1, '2026-03-01', 'PIX', 89.90, '44455566677', 1),
+(2, '2026-03-02', 'Cartão de Crédito', 89.80, '88899900011', 2),
+(3, '2026-03-03', 'Dinheiro', 45.00, '77766655544', 1),
+(4, '2026-03-04', 'PIX', 134.80, '33322211100', 3),
+(5, '2026-03-04', 'Cartão de Débito', 59.90, '11144477700', 4),
+(6, '2026-03-05', 'PIX', 110.00, '22255588811', 5),
+(7, '2026-03-05', 'Cartão de Crédito', 29.90, '33366699922', 6),
+(8, '2026-03-06', 'Dinheiro', 99.80, '44477700033', 7),
+(9, '2026-03-06', 'PIX', 44.90, '55588811144', 8),
+(10, '2026-03-07', 'Cartão de Crédito', 125.00, '66699922255', 9),
+(11, '2026-03-07', 'Cartão de Débito', 79.90, '77700033366', 10),
+(12, '2026-03-08', 'PIX', 65.00, '88811144477', 11),
+(13, '2026-03-08', 'Dinheiro', 39.90, '99922255588', 12),
+(14, '2026-03-09', 'Cartão de Crédito', 154.80, '00033366699', 13),
+(15, '2026-03-09', 'PIX', 49.90, '12312312388', 14),
+(16, '2026-03-10', 'Cartão de Débito', 32.50, '23423423499', 15),
+(17, '2026-03-10', 'PIX', 54.90, '34534534500', 16),
+(18, '2026-03-10', 'Cartão de Crédito', 64.90, '45645645611', 17),
+(19, '2026-03-10', 'Dinheiro', 99.90, '56756756722', 18),
+(20, '2026-03-10', 'PIX', 34.90, '67867867833', 19);
+
+
+INSERT INTO tb_livro_autor (isbn, cpf_autor) VALUES
+('9788532511011', '11122233344'),
+('9788576082675', '55566677788'),
+('9788535902778', '99988877766'),
+('9788535909845', '22233344455'),
+('9788539004119', '33344455566'),
+('9788550800653', '55566677788'),
+('9788535914849', '10101010101'),
+('9788598078847', '20202020202'),
+('9788535911695', '40404040404'),
+('9788573024623', '70707070707'),
+('9788575422398', '34343434343'),
+('9788576088004', '50505050505'),
+('9788580575392', '30303030303'),
+('9788532520662', '12121212121'),
+('9788580573107', '23232323232'),
+('9788576089520', '50505050505'),
+('9788535904833', '80808080808'),
+('9788576087014', '50505050505'),
+('9788585910686', '90909090909'),
+('9788535933420', '45454545454');
+
+INSERT INTO tb_livro_fornecedor (isbn, cnpj_fornecedor) VALUES
+('9788532511011', '11223344000155'),
+('9788576082675', '55667788000199'),
+('9788535902778', '11223344000155'),
+('9788535909845', '99887766000133'),
+('9788539004119', '55667788000199'),
+('9788550800653', '99887766000133'),
+('9788535914849', '11111111000101'),
+('9788598078847', '22222222000102'),
+('9788535911695', '33333333000103'),
+('9788573024623', '44444444000104'),
+('9788575422398', '55555555000105'),
+('9788576088004', '66666666000106'),
+('9788580575392', '77777777000107'),
+('9788532520662', '88888888000108'),
+('9788580573107', '99999999000109'),
+('9788576089520', '10000000000110'),
+('9788535904833', '20000000000120'),
+('9788576087014', '30000000000130'),
+('9788585910686', '40000000000140'),
+('9788535933420', '50000000000150');
+
+INSERT INTO tb_item_compra (id_compra, isbn, quantidade, valor_unitario) VALUES
+(1, '9788576082675', 1, 89.90),
+(2, '9788532511011', 1, 49.90),
+(2, '9788535902778', 1, 39.90),
+(3, '9788535909845', 1, 45.00),
+(4, '9788532511011', 1, 49.90),
+(4, '9788539004119', 1, 34.90),
+(4, '9788535902778', 1, 50.00),
+(5, '9788532520662', 1, 59.90),
+(6, '9788576088004', 1, 110.00),
+(7, '9788535914849', 1, 29.90),
+(8, '9788532511011', 2, 49.90),
+(9, '9788575422398', 1, 44.90),
+(10, '9788576087014', 1, 125.00),
+(11, '9788585910686', 1, 79.90),
+(12, '9788576089520', 1, 65.00),
+(13, '9788535933420', 1, 39.90),
+(14, '9788550800653', 1, 99.90),
+(14, '9788580575392', 1, 54.90),
+(15, '9788580573107', 1, 49.90),
+(16, '9788598078847', 1, 32.50);
+
+-- Query 1 Listar o nome, o preço e a quantidade em estoque de todos os livros
+SELECT nome, preco, quantidade 
+FROM tb_livro;
+
+-- Query 2 Selecionar o nome e o e-mail de todas as editoras cadastradas
+SELECT nome, email 
+FROM tb_editora;
+
+-- Query 3 Buscar clientes cujo nome contenha o termo "Silva"
+SELECT cpf, nome, telefone 
+FROM tb_cliente 
+WHERE nome LIKE '%Silva%';
+
+-- Query 4 Listar todas as seções da livraria com seus nomes e descrições
+SELECT nome, descricao 
+FROM tb_secao;
+
+-- Query 5 Exibir todas as formas de pagamento registradas nas compras
+SELECT DISTINCT forma_pagamento 
+FROM tb_compra;
